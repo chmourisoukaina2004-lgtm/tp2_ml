@@ -14,9 +14,9 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_score,recall_score,matthews_corrcoef,balanced_accuracy_score,f1_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-
-
-
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import cross_val_score
+import numpy as np
 #importer Dataset isis c'est un jeu de données des fleures 
 import pandas as pd
 
@@ -58,14 +58,13 @@ print(df.isnull().sum())
 df.dropna()
 
 # - imputation de moy et mediane :
-df["age"].fillna(df["age"].mean(), inplace=True)
+df["sepal_length"].fillna(df["sepal_length"].mean(), inplace=True)
 
-df["age"].fillna(df["age"].median(), inplace=True)
+df["sepal_width"].fillna(df["sepal_width"].median(), inplace=True)
 
 # - mode
-df["sexe"].fillna(df["sexe"].mode()[0], inplace=True)
+df["species"].fillna(df["species"].mode()[0], inplace=True)
 
-# - KNN
 
 # b- Encodage des variables catégorielles 
 
@@ -205,9 +204,37 @@ print("matrice de confusion : ", m_c)
 sns.heatmap(
     m_c , annot=True , cmap="Blues"
 )
+
 plt.xlabel('prediction')
 plt.ylabel('vrais valeurs')
 plt.title('matrice de confusion RL')
+plt.show()
+
+#Stratified K-fold : 
+skf = StratifiedKFold(
+    n_splits=5, shuffle=True,random_state=42
+)
+scorres=cross_val_score(
+    model,X_train_scaled,y_train,cv=skf,scoring='accuracy'
+)
+print('score : ',scorres)
+print("accuracy moyenne : ",scorres.mean())
+
+from sklearn.model_selection import learning_curve
+#les learning cuves 
+train_size,train_scores,test_scores=learning_curve(
+    model,X_train_scaled,y_train,cv=5,scoring='accuracy',
+    train_sizes=np.linspace(0.1,1.0,10)
+)
+train_mean=np.mean(train_scores,axis=1)
+test_mean=np.mean(test_scores,axis=1)
+plt.plot(train_size,train_mean,label='train accuracy')
+plt.plot(train_size,test_mean,label='validation accuracy')
+plt.xlabel('traning size')
+plt.ylabel("accuracy")
+plt.title('les learning cuves  sur RL')
+plt.legend()
+plt.grid()
 plt.show()
 
     # 2- KNN 
@@ -261,6 +288,8 @@ print('balanced_accuracy_score :', balaced_acc)
 # #M7 : MCC 
 mcc=matthews_corrcoef(y_test,y_predit)
 print("mcc : ", mcc)
+
+
 
 sns.heatmap(
     m_c , annot=True , cmap="Blues"
